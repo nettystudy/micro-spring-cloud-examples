@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>  
+	<include resource="org/springframework/boot/logging/logback/defaults.xml" />
+	<conversionRule conversionWord="sh" converterClass="com.zhht.LogIpConverter" />
+     <springProperty scope="context" name="logLevel" source="logging.pattern.level" defaultValue="info"/>
+    <springProperty scope="context" name="logPath" source="logging.path" defaultValue="/data/logs/"/>
+    <springProperty scope="context" name="logAppender" source="logging.appender" defaultValue="file"/>
+    <springProperty scope="context" name="logRocketmqLevel" source="logging.rokectmq.level" defaultValue="warn"/>
+    <springProperty scope="context" name="serverName" source="spring.application.name" defaultValue="microserver"/>
+    <property name="maxHistory_file" value="30"/>  
+    <property name="maxHistory_beat" value="7"/>  
+    <property name="LOG_FILE" value="${BUILD_FOLDER:-build}/${springAppName}"/>
+    <property name="MICRO_CONSOLE_LOG_PATTERN" value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(${serverName}){boldGreen} %clr([%sh]){boldGreen} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+    <property name="MICRO_FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } ${serverName} %sh --- [%t] %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">  
+       <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>${MICRO_CONSOLE_LOG_PATTERN}</pattern>
+			<charset>utf8</charset>
+		</encoder>
+    </appender>  
+     <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">  
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">  
+            <fileNamePattern>${logPath}/${serverName}/${serverName}.%d{yyyy-MM-dd}.log</fileNamePattern>  
+            <maxHistory>${maxHistory_file}</maxHistory>  
+        </rollingPolicy>  
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>${MICRO_FILE_LOG_PATTERN}</pattern>
+		</encoder>
+    </appender>  
+    
+    <appender name="file2beat" class="ch.qos.logback.core.rolling.RollingFileAppender">  
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">  
+            <fileNamePattern>${logPath}/${serverName}/fbeats/${serverName}.%d{yyyy-MM-dd}.json</fileNamePattern>  
+            <maxHistory>${maxHistory_beat}</maxHistory>  
+        </rollingPolicy>  
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>
+				{"runtime":"%d{yyyy-MM-dd HH:mm:ss.SSS}","host":"%sh","severity": "%level","service": "${serverName:-}","trace": "%X{X-B3-TraceId:-}","span": "%X{X-B3-SpanId:-}","parent": "%X{X-B3-ParentSpanId:-}","exportable": "%X{X-Span-Export:-}","pid": "${PID:-}","thread": "%thread","class": "%logger","rest": "%message"}%n
+			</pattern>
+		</encoder>
+    </appender>
+
+    <logger name="RocketmqClient" additivity="false">
+        <level value="${logRocketmqLevel}"/>
+        <appender-ref ref="${logAppender}"/>
+    </logger>
+
+    <root>  
+        <level value="${logLevel}" />  
+        <appender-ref ref="${logAppender}" />
+         <appender-ref ref="file2beat" />
+    </root>  
+</configuration>   
